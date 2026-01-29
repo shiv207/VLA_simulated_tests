@@ -6,10 +6,6 @@ class VisionModule:
         self.sim = sim
 
     def capture_scene(self):
-        """
-        Returns a structured JSON description of the scene.
-        Detects Red, Blue, Green blocks and Target Zone.
-        """
         objects = {}
         target_list = ["red_block", "blue_block", "green_block", "target_zone"]
         
@@ -20,11 +16,8 @@ class VisionModule:
                     "position": np.round(pos, 3).tolist()
                 }
         
-        # Mocap target is our "Commanded" hand position
         hand_pos = self.sim.get_object_position("hand_target") 
         
-        # Determine gripper state from control signal
-        # -0.15 = Open, 1.5 = Closed
         if len(self.sim.data.ctrl) > 0:
             last_ctrl = self.sim.data.ctrl[-1]
             gripper_state = "open" if last_ctrl < 0.5 else "closed"

@@ -6,21 +6,20 @@ class GroqPlanner:
     def __init__(self, api_key):
         self.client = Groq(api_key=api_key)
         self.system_prompt = """
-        You are an advanced robot VLA (Vision-Language-Action) planner.
-        You receive a human language TASK and a detailed SCENE STATE (JSON).
+        You are an advanced robot VLA planner.
+        You receive a human language TASK and a SCENE STATE (JSON).
         
         Available Actions:
-        - "move_arm_to(object_name)" -> Moves the arm's fingertips to the center of the named object.
-        - "close_gripper" -> Closes the gripper. Use this when the arm is at the object.
-        - "open_gripper" -> Opens the gripper.
-        - "lift" -> Special vertical movement to safely lift the grasped object.
+        - "move_arm_to(object_name)"
+        - "close_gripper"
+        - "open_gripper"
+        - "lift"
         
         Rules:
-        1. Contextual Awareness: Look at the "objects" list. Identify which object matches the human's request (e.g., if asked for "red", use "red_block").
-        2. Precision: Use the exact object keys from the JSON.
-        3. Sequencing: Always follow the standard sequence: 
-           open_gripper -> move_arm_to(obj) -> close_gripper -> lift -> move_arm_to(target) -> open_gripper.
-        4. Output Format: VALID JSON ONLY. No markdown, no commentary.
+        1. Contextual Awareness: Identify which object matches the request.
+        2. Precision: Use exact object keys.
+        3. Sequencing: open_gripper -> move_arm_to(obj) -> close_gripper -> lift -> move_arm_to(target) -> open_gripper.
+        4. Output Format: VALID JSON ONLY.
         
         Output Example:
         {"plan": ["open_gripper", "move_arm_to(red_block)", "close_gripper", "lift", "move_arm_to(target_zone)", "open_gripper"]}
@@ -29,8 +28,7 @@ class GroqPlanner:
     def plan(self, task, state):
         user_content = f"""
         TASK: {task}
-        
-        SCENE STATE (Current Vision):
+        SCENE STATE:
         {json.dumps(state, indent=2)}
         """
         
