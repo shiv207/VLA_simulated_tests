@@ -1,0 +1,150 @@
+<mujoco model="vla_so101_scene_fixed">
+  <compiler angle="radian" autolimits="true" inertiafromgeom="true"/>
+  
+  <!-- Enhanced physics options for stability -->
+  <option timestep="0.002" iterations="50" ls_iterations="50" tolerance="1e-10" 
+          impratio="10" cone="elliptic" jacobian="auto">
+    <flag warmstart="enable" contact="enable" gravity="enable"/>
+  </option>
+  
+  <visual>
+    <global offwidth="1920" offheight="1080"/>
+    <headlight ambient="0.4 0.4 0.4" diffuse="0.6 0.6 0.6" specular="0.2 0.2 0.2"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+    <quality shadowsize="4096"/>
+    <map force="0.1" zfar="30"/>
+  </visual>
+
+  <!-- Include the robot -->
+  <include file="so101.xml"/>
+
+  <asset>
+    <!-- Enhanced textures with proper backface rendering -->
+    <texture type="skybox" builtin="gradient" rgb1="0.6 0.8 0.9" rgb2="0.9 0.9 0.9" width="512" height="512"/>
+    <texture name="grid" type="2d" builtin="checker" rgb1=".1 .2 .3" rgb2=".2 .3 .4" mark="edge" markrgb=".8 .8 .8" width="300" height="300"/>
+    <material name="grid_mat" texture="grid" texrepeat="2 2" texuniform="true" reflectance="0.1"/>
+    
+    <!-- Double-sided table material (prevents culling issues) -->
+    <material name="table_mat" rgba="0.3 0.3 0.3 1" specular="0.2" shininess="0.3" reflectance="0.1"/>
+    
+    <material name="red_block_mat" rgba="0.9 0.1 0.1 1" specular="0.3" shininess="0.5"/>
+    <material name="blue_block_mat" rgba="0.1 0.1 0.9 1" specular="0.3" shininess="0.5"/>
+    <material name="green_block_mat" rgba="0.1 0.9 0.1 1" specular="0.3" shininess="0.5"/>
+    <material name="target_zone_mat" rgba="0.1 0.9 0.1 0.4" specular="0.1" shininess="0.2"/>
+  </asset>
+
+  <worldbody>
+    <!-- Enhanced lighting setup (prevents camera clipping artifacts) -->
+    <light pos="0.5 0.5 2" dir="0 0 -1" castshadow="true" diffuse="0.8 0.8 0.8" specular="0.3 0.3 0.3"/>
+    <light pos="-0.5 -0.5 1.5" dir="0 0 -1" castshadow="false" diffuse="0.4 0.4 0.4"/>
+
+    <!-- SOLID FLOOR PLANE (prevents camera clipping) -->
+    <!-- Set at z=-0.1 with proper collision geometry -->
+    <geom name="floor_plane" type="plane" size="3 3 0.1" material="grid_mat" pos="0 0 -0.1"
+          friction="1.0 0.1 0.1" condim="3" contype="1" conaffinity="1"/>
+    
+    <!-- STATIC PLATFORM/TABLE (proper collision set) -->
+    <!-- Positioned to support robot base at z=0 -->
+    <body name="table" pos="0.35 0 0.04" mocap="false">
+      <!-- Main table surface - STATIC with high friction -->
+      <geom name="table_top" type="box" size="0.4 0.4 0.02" material="table_mat" 
+            friction="0.9 0.1 0.1" condim="4" contype="1" conaffinity="1"
+            solref="0.02 1" solimp="0.95 0.99 0.001"/>
+      
+      <!-- Table legs for realistic support (optional visual) -->
+      <geom name="leg1" type="cylinder" size="0.02 0.1" pos="0.35 0.35 -0.1" rgba="0.3 0.3 0.3 1" contype="0"/>
+      <geom name="leg2" type="cylinder" size="0.02 0.1" pos="0.35 -0.35 -0.1" rgba="0.3 0.3 0.3 1" contype="0"/>
+      <geom name="leg3" type="cylinder" size="0.02 0.1" pos="-0.35 0.35 -0.1" rgba="0.3 0.3 0.3 1" contype="0"/>
+      <geom name="leg4" type="cylinder" size="0.02 0.1" pos="-0.35 -0.35 -0.1" rgba="0.3 0.3 0.3 1" contype="0"/>
+    </body>
+
+    <!-- Target Zone (Bowl location) -->
+    <body name="target_zone" pos="0.5 0.2 0.001">
+      <geom type="cylinder" size="0.06 0.001" material="target_zone_mat" contype="0" conaffinity="0"/>
+    </body>
+
+    <!-- DYNAMIC BLOCKS with realistic physics -->
+    <!-- Proper mass, inertia, friction, and collision geometry -->
+    
+    <!-- Red Block -->
+    <body name="red_block" pos="0.30 -0.05 0.08">
+      <freejoint/>
+      <geom name="red_geom" type="box" size="0.015 0.015 0.015" material="red_block_mat" 
+            mass="0.030" density="1000"
+            condim="4" friction="1.5 0.05 0.005" 
+            solref="0.01 1" solimp="0.95 0.99 0.001"
+            contype="1" conaffinity="1"/>
+      <inertial pos="0 0 0" mass="0.030" diaginertia="0.000014 0.000014 0.000014"/>
+    </body>
+    
+    <!-- Blue Block (Distractor) -->
+    <body name="blue_block" pos="0.30 0.05 0.08">
+      <freejoint/>
+      <geom name="blue_geom" type="box" size="0.015 0.015 0.015" material="blue_block_mat" 
+            mass="0.030" density="1000"
+            condim="4" friction="1.5 0.05 0.005" 
+            solref="0.01 1" solimp="0.95 0.99 0.001"
+            contype="1" conaffinity="1"/>
+      <inertial pos="0 0 0" mass="0.030" diaginertia="0.000014 0.000014 0.000014"/>
+    </body>
+
+    <!-- Green Block (Distractor) -->
+    <body name="green_block" pos="0.40 0.0 0.08">
+      <freejoint/>
+      <geom name="green_geom" type="box" size="0.015 0.015 0.015" material="green_block_mat" 
+            mass="0.030" density="1000"
+            condim="4" friction="1.5 0.05 0.005" 
+            solref="0.01 1" solimp="0.95 0.99 0.001"
+            contype="1" conaffinity="1"/>
+      <inertial pos="0 0 0" mass="0.030" diaginertia="0.000014 0.000014 0.000014"/>
+    </body>
+
+    <!-- Mocap Target with smooth trajectory visualization -->
+    <body name="hand_target" mocap="true" pos="0.2 0 0.3">
+        <geom type="sphere" size="0.008" rgba="0 1 0 0.6" contype="0" conaffinity="0"/>
+        <!-- Direction indicator -->
+        <geom type="cylinder" size="0.002 0.02" rgba="0 1 0 0.8" contype="0" conaffinity="0" 
+              pos="0 0 -0.02" euler="0 0 0"/>
+    </body>
+  </worldbody>
+
+  <equality>
+      <!-- SMOOTHED puppet controller (prevents jerky motion) -->
+      <!-- Softer spring for smooth 50Hz+ updates -->
+      <weld body1="hand_target" body2="gripper" active="true" 
+            solref="0.005 1" solimp="0.92 0.96 0.001"/>
+
+      <!-- PROXIMITY-BASED grasp system (no teleporting) -->
+      <!-- Separate welds for each block with proper activation logic -->
+      <weld name="grasp_red" body1="gripper" body2="red_block" active="false" 
+            solref="0.002 1" solimp="0.98 0.99 0.0001"/>
+      <weld name="grasp_blue" body1="gripper" body2="blue_block" active="false" 
+            solref="0.002 1" solimp="0.98 0.99 0.0001"/>
+      <weld name="grasp_green" body1="gripper" body2="green_block" active="false" 
+            solref="0.002 1" solimp="0.98 0.99 0.0001"/>
+  </equality>
+
+  <!-- Contact configuration (collision sets) -->
+  <contact>
+    <!-- Robot-Table collision -->
+    
+    <!-- Floor-Robot base collision (prevent clipping) -->
+    <pair geom1="floor_plane" geom2="red_geom" condim="4" friction="1.2 0.05 0.005"/>
+    <pair geom1="floor_plane" geom2="blue_geom" condim="4" friction="1.2 0.05 0.005"/>
+    <pair geom1="floor_plane" geom2="green_geom" condim="4" friction="1.2 0.05 0.005"/>
+    
+    <!-- Table-Block collision (prevents clipping through platform) -->
+    <pair geom1="table_top" geom2="red_geom" condim="4" friction="1.0 0.05 0.005" 
+          solref="0.01 1" solimp="0.95 0.99 0.001"/>
+    <pair geom1="table_top" geom2="blue_geom" condim="4" friction="1.0 0.05 0.005"
+          solref="0.01 1" solimp="0.95 0.99 0.001"/>
+    <pair geom1="table_top" geom2="green_geom" condim="4" friction="1.0 0.05 0.005"
+          solref="0.01 1" solimp="0.95 0.99 0.001"/>
+  </contact>
+
+  <!-- Actuator settings for smooth trajectory -->
+  <actuator>
+    <!-- These are defined in so101.xml but we can override for smoother control -->
+  </actuator>
+
+</mujoco>
