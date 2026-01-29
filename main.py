@@ -3,14 +3,15 @@ import os
 import sys
 import time
 from dotenv import load_dotenv
+from groq import Groq
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
 
 from src.sim.scene import SimulationEnvironment
-from src.vision.observer import VisionModule
-from src.vision.gemini_observer import GeminiVisionModule
-from src.reasoning.planner import GroqPlanner
-from src.control.executor import ActionExecutor
+import src.vision.observer as sim_vision
+import src.vision.gemini_observer as gemini_vision
+import src.reasoning.planner as planner
+import src.control.executor as executor
 
 def setup_environment():
     load_dotenv()
@@ -21,18 +22,21 @@ def run_simulation(task, vision_mode="sim", interactive=False):
     print(f"\n Initializing VLA System | Vision: {vision_mode.upper()} | Task: {task}")
     
     sim = SimulationEnvironment(xml_path="robotstudio_so101/VLA_SCENE.xml")
+    groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
     
+    # Define Vision Callback
     if vision_mode == "gemini":
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            print("Error: GEMINI_API_KEY not found.")
+        gemini_key = os.getenv("GEMINI_API_KEY")
+        if not gemini_key:
+            print("Error: GEMINI_API_KEY missing.")
             return
-        vision = GeminiVisionModule(sim, api_key=api_key)
-    else:
-        vision = VisionModule(sim)
+        gemini_model = gemini_vision.setup_gemini(gemini_key)
         
-    planner = GroqPlanner(api_key=os.getenv("GROQ_API_KEY"))
-    executor = ActionExecutor(sim, vision)
+        # Lambda to capture state using Gemini
+        get_state_fn = lambda: gemini_vision.capture_gemini_state(sim, gemini_model)
+    else:
+        # Lambda to capture state using ground truth
+        get_state_fn = lambda: sim_vision.capture_vision_state(sim)
 
     sim.launch_viewer()
     
@@ -45,12 +49,17 @@ def run_simulation(task, vision_mode="sim", interactive=False):
         print(f"\n--- Attempt {attempt + 1}/{max_retries} ---")
         
         print(" Scanning scene...")
-        scene_state = vision.capture_scene()
+        try:
+            scene_state = get_state_fn()
+        except Exception as e:
+            print(f" Vision failed: {e}")
+            continue
+            
         objects = list(scene_state.get('objects', {}).keys())
         print(f"   Detected: {objects}")
 
         print(" Generative planning...")
-        plan = planner.plan(task, scene_state)
+        plan = planner.generate_plan(groq_client, task, scene_state)
         
         if not plan:
             print(" Planning failed. Retrying...")
@@ -59,7 +68,7 @@ def run_simulation(task, vision_mode="sim", interactive=False):
         print(f"   Action Plan: {plan}")
 
         print(" Executing actions...")
-        success = executor.execute_plan(plan)
+        executor.execute_plan(sim, get_state_fn, plan)
         
         sim.wait_for_stability()
         if validation_check(scene_state, task):
