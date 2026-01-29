@@ -1,19 +1,10 @@
-# 🤖 VLA Simulation System
+# VLA Simulation (MuJoCo + LLM)
 
-A robust Vision-Language-Action (VLA) simulation for the SO-101 robot arm using MuJoCo.
+A lightweight Vision-Language-Action system for the SO-101 robot arm. It combines **MuJoCo** for physics, **Groq (Llama 3)** for planning, and **Gemini Vision** for perception.
 
-## 🌟 Features
+## Setup
 
-*   **Stable Physics**: Tuned contacts and solver parameters for reliable manipulation (1ms timestep).
-*   **Generative Planning**: Uses Groq (Llama 3) to convert natural language into action plans.
-*   **Vision System**:
-    *   **Sim Mode**: Ground-truth state detection (fast, reliable).
-    *   **Gemini Mode**: Real VLM-based perception using Google Gemini Pro Vision.
-*   **Clean Architecture**: Modular design separating Vision, Reasoning, and Control.
-
-## 🚀 Quick Start
-
-1.  **Setup Environment**
+1.  **Install Dependencies**
     ```bash
     python3 -m venv .venv
     source .venv/bin/activate
@@ -21,39 +12,34 @@ A robust Vision-Language-Action (VLA) simulation for the SO-101 robot arm using 
     ```
 
 2.  **Configure Keys**
-    Create a `.env` file (based on `.env.example`) with your API keys:
-    ```bash
-    cp .env.example .env
-    # Edit .env with your GROQ_API_KEY and GEMINI_API_KEY
+    Create a `.env` file with your API keys:
+    ```env
+    GROQ_API_KEY=your_groq_key
+    GEMINI_API_KEY=your_gemini_key
     ```
 
-3.  **Run Simulation**
-    ```bash
-    python main.py --task "Pick up the red box"
-    ```
+## Usage
 
-## 🎮 Interactive Mode
+**Basic Run:**
+```bash
+python main.py --task "Pick up the red box"
+```
 
-Run with interactive prompts:
+**Using Gemini Vision:**
+```bash
+python main.py --task "Pick up the blue box" --vision gemini
+```
+
+**Interactive Mode:**
 ```bash
 python main.py --interactive
 ```
 
-## 📁 Project Structure
+## Structure
 
-*   `main.py`: Entry point and orchestration.
-*   `src/sim/`: MuJoCo physics engine wrapper and scene management.
-*   `src/reasoning/`: LLM planner integration (Groq).
-*   `src/control/`: Robot action executor (Mocap/IK).
-*   `src/vision/`: Perception modules (Sim & Gemini).
-*   `robotstudio_so101/`: XML assets and robot definitions.
-
-## 🛠️ Troubleshooting
-
-*   **Viewer not launching?**
-    *   On macOS, `mujoco` passive viewer runs best with the `mjpython` launcher.
-    *   Try: `.venv/bin/mjpython main.py`
-    *   If that fails due to path spaces, the simulation will seamlessly fall back to headless mode and simply print progress.
-
-## 📜 License
-MIT License
+*   `main.py`: Orchestration script.
+*   `src/sim`: Physics environment and robot control.
+*   `src/vision`: Perception modules (Sim-based & Gemini-based).
+*   `src/reasoning`: LLM planner using Groq.
+*   `src/control`: Action execution logic.
+*   `robotstudio_so101/`: Robot XML assets.
