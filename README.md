@@ -11,7 +11,7 @@ Our testing has demonstrated a highly stable and capable closed-loop control sys
 *   **Vision-Action Alignment**: The functional refactor reduced latency. The system reliably aligns real-time perception (Gemini or Sim) with the robot's end-effector, achieving sub-centimeter grasp precision in standard scenarios.
 *   **System Latency**: end-to-end cycle time (Perception → Plan → Action) is approximately **800ms** on standard hardware, with Groq inference taking <200ms of that budget.
 
-#Future
+## Future work
 
 * improvements in the overall thinking budget greatly increase the yield.
 * Better **robotic aerchetecture understanding** in the sense the model didnt understand logics of moving accuators on the robotic arm which resulted in jitters and occasionally complete failure.
